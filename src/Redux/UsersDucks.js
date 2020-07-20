@@ -1,4 +1,4 @@
-import { auth, firebase } from '../firebase'
+import { auth, firebase, db, storage } from '../firebase'
 //data
 const initialData = {
     loading: false,
@@ -33,18 +33,35 @@ export const loginUserAction = () => async (dispatch) => {
     try {
         const provider = new firebase.auth.GoogleAuthProvider();
         const res = await auth.signInWithPopup(provider)
-        dispatch({
-            type: SUCCESS_USER,
-            payload: {
-                uid: res.user.uid,
-                email: res.user.email
-            }
-        })
 
-        localStorage.setItem('user', JSON.stringify({
+        const user = {
             uid: res.user.uid,
-            email: res.user.email
-        }))
+            email: res.user.email,
+            displayName: res.user.displayName,
+            photoUrl: res.user.photoURL
+        }
+
+        const userDb = await db.collection('users').doc(user.email).get()
+
+        if (user.exists) {
+            dispatch({
+                type: SUCCESS_USER,
+                payload: userDb.data()
+            })
+
+            localStorage.setItem('user', JSON.stringify(userDb.data()))
+        } else {
+            await db.collection('users').doc(user.email).set(user)
+
+            dispatch({
+                type: SUCCESS_USER,
+                payload: user
+            })
+
+            localStorage.setItem('user', JSON.stringify(user))
+
+        }
+
 
     } catch (error) {
         console.log(error);
@@ -69,4 +86,70 @@ export const closeSection = () => (dispatch) => {
     dispatch({
         type: CLOSE_SECTION
     })
+}
+
+export const updateUserAction = (name) => async (dispatch, getState) => {
+
+    dispatch({
+        type: LOADING
+    })
+
+    const { user } = getState().users
+
+    try {
+        await db.collection("users").doc(user.email).update({
+            displayName: name
+        })
+
+        const updatedUser = {
+            ...user, displayName: name
+        }
+
+        dispatch({
+            type: SUCCESS_USER,
+            payload: updatedUser
+        })
+
+        localStorage.setItem('user', JSON.stringify(updatedUser))
+
+    } catch (error) {
+        console.log(error);
+    }
+
+}
+
+export const updateImageAction = (image) => async (dispatch, getState) => {
+
+    dispatch({
+        type: LOADING
+    })
+
+    const { user } = getState().users
+
+    try {
+
+        const imageRef = await storage.ref().child(user.email).child('profile')
+        await imageRef.put(image)
+
+        const imageUrl = await imageRef.getDownloadURL()
+
+        await db.collection("users").doc(user.email).update({
+            photoUrl: imageUrl
+        })
+
+        const updatedUser = {
+            ...user, photoUrl: imageUrl
+        }
+
+        dispatch({
+            type: SUCCESS_USER,
+            payload: updatedUser
+        })
+
+        localStorage.setItem('user', JSON.stringify(updatedUser))
+
+    } catch (error) {
+        console.log(error);
+    }
+
 }

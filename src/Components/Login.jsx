@@ -13,7 +13,7 @@ const Login = (props) => {
     if (active) {
       props.history.push("/");
     }
-  }, [active]);
+  }, [active, props.history]);
 
   return (
     <div className="mt-5 text-center">

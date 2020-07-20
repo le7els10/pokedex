@@ -9,6 +9,7 @@ import {
 import Login from "./Components/Login";
 import Navbar from "./Components/Navbar";
 import { auth } from "./firebase";
+import Profile from "./Components/Profile";
 
 function App() {
   const [FirebaseUser, setFirebaseUser] = useState(false);
@@ -47,6 +48,7 @@ function App() {
         <Navbar />
         <Switch>
           <PrivateRoute component={Pokemons} path="/" exact />
+          <PrivateRoute component={Profile} path="/profile" exact />
           <Route component={Login} path="/login" exact />
         </Switch>
       </div>

@@ -7,7 +7,6 @@ import "./css/global.css"
 
 const store = generateStore();
 
-
 ReactDOM.render(
 
   <React.StrictMode>
